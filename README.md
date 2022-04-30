@@ -14,3 +14,6 @@ And if the program doesn't recognize the library opencv2 try with:
 ```
 ln -s /usr/local/include/opencv4/opencv2/ /usr/local/include/opencv2
 ```
+
+
+For some reason if you increase the dimentions of the image, the program just dies.
