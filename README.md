@@ -16,4 +16,4 @@ ln -s /usr/local/include/opencv4/opencv2/ /usr/local/include/opencv2
 ```
 
 
-For some reason if you increase the dimentions of the image, the program just dies.
+For some reason if you increase the dimentions of the image to something big , the program just dies. Probabily fill the gpu memory.
