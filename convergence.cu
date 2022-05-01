@@ -56,9 +56,9 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 
 int main(){
     
-    constexpr int width = 4096, height = 2152;
+    constexpr int width = 719, height = 719;
     
-    cv::Mat img = cv::imread("huby.png");
+    cv::Mat img = cv::imread("in/huby.png");
      
     
   
@@ -156,22 +156,22 @@ int main(){
     dotProduct<<<blockDim,threadsPerBlock>>>(d_imgR, d_kernel, d_resR, height,width);
     dotProduct<<<blockDim,threadsPerBlock>>>(d_imgG, d_kernel, d_resG, height,width);
 
-    // dotProduct<<<blockDim,threadsPerBlock>>>(d_imgB, d_kernel, d_resB, height,width);
+    dotProduct<<<blockDim,threadsPerBlock>>>(d_imgB, d_kernel, d_resB, height,width);
 
 
     //Just in case cudaDeviceSynchronize();
     //Copy result back to CPU
     cudaMemcpy(resultR, d_resR, bytes_n, cudaMemcpyDeviceToHost);
     cudaMemcpy(resultG, d_resG, bytes_n, cudaMemcpyDeviceToHost);
-    // cudaMemcpy(resultB, d_resB, bytes_n, cudaMemcpyDeviceToHost);
+    cudaMemcpy(resultB, d_resB, bytes_n, cudaMemcpyDeviceToHost);
 
 
 
 
 
 
-    int maxR = 0, maxG = 0, maxB = 0;
-    int minR = 255, minG = 255, minB = 255;
+    int maxR = 255, maxG = 255, maxB = 255;
+    int minR = 0, minG = 0, minB = 0;
 
     for(int j = 0; j<img.rows; j++ ) 
     { 
@@ -179,12 +179,16 @@ int main(){
         {
             minR = min(resultR[j][i] , minR);   maxR = max(resultR[j][i], maxR);
             minG = min(resultR[j][i] , minG);   maxG = max(resultR[j][i], maxG);
+            minB = min(resultB[j][i] , minB);   maxG = max(resultB[j][i], maxB);
         } 
     }
 
     
 
     printf("MaxR %d, minR  %d\n", maxR, minR);
+    printf("MaxG %d, minG  %d\n", maxG, minG);
+    printf("MaxB %d, minB  %d\n", maxB, minB);
+    
     for(int j = 0; j<img.rows; j++ ) 
     { 
         for(int i = 0; i<img.cols; i++ ) 
@@ -192,7 +196,7 @@ int main(){
             //default open cv is BRG
             resultImage.at<cv::Vec3b>(j,i)[2] = float(resultR[j][i] - minR) / (maxR - minR) * 255;
             resultImage.at<cv::Vec3b>(j,i)[1] = float(resultG[j][i] - minG) / (maxG - minG) * 255;
-            resultImage.at<cv::Vec3b>(j,i)[0] = 150;
+            resultImage.at<cv::Vec3b>(j,i)[0] = float(resultG[j][i] - minG) / (maxG - minG) * 255;
 
         } 
     }
@@ -201,7 +205,7 @@ int main(){
 
      
 
-    cv::imwrite("test.jpg",resultImage);
+    cv::imwrite("out/test.jpg",resultImage);
     // printf("%d\n", resultG[21][213]);
     // printf("max r:%d \n", maxR);
 
