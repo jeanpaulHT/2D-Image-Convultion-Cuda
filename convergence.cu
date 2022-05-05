@@ -8,6 +8,8 @@
 #include <opencv2/video/background_segm.hpp>
 #include <opencv2/imgcodecs.hpp>
 
+#include <time.h>
+
 // #define N 18
 // #define DIM N
 
@@ -47,7 +49,7 @@ __global__ void dotProduct(int * img_arr, int* kernel,int* res, int height, int 
 int main(){
     
     // constexpr int width = 1920, height = 2560;
-    cv::Mat img = cv::imread("in/nia.png");
+    cv::Mat img = cv::imread("in/star.tif");
 
     int height = img.rows; //img.rows  1000
     int width = img.cols; //img.cols    700
@@ -107,7 +109,7 @@ int main(){
 
     
     // Calculating <numBlocks, Threads per block>
-    int tpb = min(16, N); //thread per block
+    int tpb = min(32, N); //thread per block
     int numBlocks = ceil(float(N) / tpb);
 
     dim3 blockDim (numBlocks, numBlocks);
@@ -159,11 +161,26 @@ int main(){
 
     //Calling function
 
-    dotProduct<<<blockDim,threadsPerBlock>>>(d_imgR, d_kernel, d_resR, height,width);
-    dotProduct<<<blockDim,threadsPerBlock>>>(d_imgG, d_kernel, d_resG, height,width);
-    dotProduct<<<blockDim,threadsPerBlock>>>(d_imgB, d_kernel, d_resB, height,width);
 
-    cudaDeviceSynchronize();
+    cudaStream_t stream1, stream2;
+
+    cudaStreamCreate(&stream1);
+    cudaStreamCreate(&stream2);
+    
+    clock_t begin = clock();
+
+    dotProduct<<<blockDim,threadsPerBlock>>>(d_imgR, d_kernel, d_resR, height,width);
+    dotProduct<<<blockDim,threadsPerBlock,0,stream1>>>(d_imgG, d_kernel, d_resG, height,width);
+    dotProduct<<<blockDim,threadsPerBlock,0,stream2>>>(d_imgB, d_kernel, d_resB, height,width);
+
+
+    clock_t end = clock();
+    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC  * 1000;
+
+    printf("time of kernel execution (miliseconds): %f\n", time_spent);
+
+    cudaStreamDestroy(stream1);
+    cudaStreamDestroy(stream2);
     // cudaError_t error = cudaGetLastError();
     // if(error!=cudaSuccess){
     //     fprintf(stderr,"ERROR: %s\n", cudaGetErrorString(error) );
