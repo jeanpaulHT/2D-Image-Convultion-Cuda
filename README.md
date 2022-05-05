@@ -15,5 +15,6 @@ And if the program doesn't recognize the library opencv2 try with:
 ln -s /usr/local/include/opencv4/opencv2/ /usr/local/include/opencv2
 ```
 
+/* For some reason if you increase the dimentions of the image, the program just dies. */
 
-For some reason if you increase the dimentions of the image to something big , the program just dies. Probabily fill the gpu memory.
+Need to fix the problem of block and thread acces. Its not a memory problem, assume image is an square in the meantime.

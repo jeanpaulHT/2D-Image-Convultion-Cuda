@@ -16,8 +16,8 @@
 
 __global__ void dotProduct(int * img_arr, int* kernel,int* res, int height, int width){
     
-    int x =  blockIdx.x * blockDim.x + threadIdx.x;
-    int y =  blockIdx.y * blockDim.y + threadIdx.y;
+    int x =  blockIdx.y * blockDim.y + threadIdx.x;
+    int y =  blockIdx.x * blockDim.x + threadIdx.y;
 
     if(x >= width || y >= height) return ;
     if(x == 0 || x == width-1 || y == 0 || y == height-1) {res[x * width + y] = 0; return;}
@@ -56,9 +56,9 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 
 int main(){
     
-    constexpr int width = 719, height = 719;
+    constexpr int width = 2560, height = 2560;
     
-    cv::Mat img = cv::imread("in/huby.png");
+    cv::Mat img = cv::imread("in/cow.jpg");
      
     
   
@@ -102,7 +102,7 @@ int main(){
 
     
     // Calculating <numBlocks, Threads per block>
-    int tpb = min(32, N); //thread per block
+    int tpb = min(16, N); //thread per block
     int numBlocks = (N + tpb - 1) / tpb;
 
     dim3 blockDim (numBlocks, numBlocks);
@@ -154,10 +154,21 @@ int main(){
 
     //Calling function
     dotProduct<<<blockDim,threadsPerBlock>>>(d_imgR, d_kernel, d_resR, height,width);
+    
+    cudaDeviceSynchronize();
+
     dotProduct<<<blockDim,threadsPerBlock>>>(d_imgG, d_kernel, d_resG, height,width);
+
+    cudaDeviceSynchronize();
 
     dotProduct<<<blockDim,threadsPerBlock>>>(d_imgB, d_kernel, d_resB, height,width);
 
+    cudaDeviceSynchronize();
+    // cudaError_t error = cudaGetLastError();
+    // if(error!=cudaSuccess){
+    //     fprintf(stderr,"ERROR: %s\n", cudaGetErrorString(error) );
+    //     exit(-1);
+    // }
 
     //Just in case cudaDeviceSynchronize();
     //Copy result back to CPU
@@ -177,7 +188,7 @@ int main(){
     { 
         for(int i = 0; i<img.cols; i++ ) 
         {
-            minR = min(resultR[j][i] , minR);   maxR = max(resultR[j][i], maxR);
+            minR = min(resultR[j][i]  , minR);   maxR = max(resultR[j][i], maxR);
             minG = min(resultR[j][i] , minG);   maxG = max(resultR[j][i], maxG);
             minB = min(resultB[j][i] , minB);   maxG = max(resultB[j][i], maxB);
         } 
@@ -194,9 +205,9 @@ int main(){
         for(int i = 0; i<img.cols; i++ ) 
         {
             //default open cv is BRG
-            resultImage.at<cv::Vec3b>(j,i)[2] = float(resultR[j][i] - minR) / (maxR - minR) * 255;
+            resultImage.at<cv::Vec3b>(j,i)[2] = float(resultR[j][i]- minR) / (maxR - minR) * 255;
             resultImage.at<cv::Vec3b>(j,i)[1] = float(resultG[j][i] - minG) / (maxG - minG) * 255;
-            resultImage.at<cv::Vec3b>(j,i)[0] = float(resultG[j][i] - minG) / (maxG - minG) * 255;
+            resultImage.at<cv::Vec3b>(j,i)[0] = float(resultG[j][i]- minG) / (maxG - minG) * 255;
 
         } 
     }
@@ -223,6 +234,7 @@ int main(){
     
     // free memory of cpu
     
+
     delete [] R;
     delete [] G;
     delete [] B;  
