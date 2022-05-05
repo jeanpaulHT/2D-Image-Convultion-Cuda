@@ -19,8 +19,8 @@ __global__ void dotProduct(int * img_arr, int* kernel,int* res, int height, int 
     int x =  blockIdx.y * blockDim.y + threadIdx.x;
     int y =  blockIdx.x * blockDim.x + threadIdx.y;
 
-    if(x >= width || y >= height) return ;
-    if(x == 0 || x == width-1 || y == 0 || y == height-1) {res[x * width + y] = 0; return;}
+    if(x >= height || y >= width) return ;
+    if(x == 0 || x == height-1 || y == 0 || y == width-1) {res[x * width + y] = 0; return;}
 
 
     int val = {};
@@ -57,10 +57,11 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 int main(){
     
     // constexpr int width = 1920, height = 2560;
-    cv::Mat img = cv::imread("in/cow.jpg");
-    
-    int width = 2560; //img.rows
-    int height = 2560; //img.cols
+    cv::Mat img = cv::imread("in/nia.png");
+
+    int height = img.rows; //img.rows
+    int width = img.cols; //img.cols
+     
 
     int* R = new int[width * height];
     int* G = new int[width * height];
@@ -71,18 +72,18 @@ int main(){
     // int (*B)[width] = new int[height][width];
 
 
-    std::cout<<(img.size())<<std::endl;
+    std::cout<<(img.rows)<<std::endl;
   
     cv::Mat resultImage = cv::Mat::zeros(img.size(), CV_8UC3);
     
     
-    for(int i = 0; i<width; i++ ) 
+    for(int i = 0; i < img.rows; i++ ) 
     { 
-        for(int j = 0; j<height; j++ ) 
+        for(int j = 0; j < img.cols; j++ ) 
         {
-            R[i*width + j] = img.at<cv::Vec3b>(j,i)[2];
-            G[i*width + j] = img.at<cv::Vec3b>(j,i)[1];
-            B[i*width + j] = img.at<cv::Vec3b>(j,i)[0];
+            R[i*img.rows + j] = img.at<cv::Vec3b>(i,j)[2];
+            G[i*img.rows + j] = img.at<cv::Vec3b>(i,j)[1];
+            B[i*img.rows + j] = img.at<cv::Vec3b>(i,j)[0];
         }
      }
 
@@ -195,13 +196,13 @@ int main(){
     int maxR = 255, maxG = 255, maxB = 255;
     int minR = 0, minG = 0, minB = 0;
 
-    for(int i = 0; i<width; i++ ) 
+    for(int i = 0; i < img.rows; i++ ) 
     { 
-        for(int j = 0; j<height; j++ ) 
+        for(int j = 0; j < img.cols; j++ )  
         {
-            minR = min(resultR[i*width + j] , minR);   maxR = max(resultR[i*width + j], maxR);
-            minG = min(resultG[i*width + j] , minG);   maxG = max(resultG[i*width + j], maxG);
-            minB = min(resultB[i*width + j] , minB);   maxB = max(resultB[i*width + j], maxB);
+            minR = min(resultR[i*img.rows + j] , minR);   maxR = max(resultR[i*img.rows + j], maxR);
+            minG = min(resultG[i*img.rows + j] , minG);   maxG = max(resultG[i*img.rows + j], maxG);
+            minB = min(resultB[i*img.rows + j] , minB);   maxB = max(resultB[i*img.rows + j], maxB);
         } 
     }
 
@@ -211,14 +212,14 @@ int main(){
     printf("MaxG %d, minG  %d\n", maxG, minG);
     printf("MaxB %d, minB  %d\n", maxB, minB);
     
-    for(int i = 0; i<width; i++ ) 
+    for(int i = 0; i < img.rows; i++ ) 
     { 
-        for(int j = 0; j<height; j++ ) 
+        for(int j = 0; j < img.cols; j++ ) 
         {
             //default open cv is BGR
-            resultImage.at<cv::Vec3b>(j,i)[2] = float(resultR[i*width + j] - minR) / (maxR - minR) * 255;
-            resultImage.at<cv::Vec3b>(j,i)[1] = float(resultG[i*width + j] - minG) / (maxG - minG) * 255;
-            resultImage.at<cv::Vec3b>(j,i)[0] = float(resultB[i*width + j] - minB) / (maxB - minB) * 255;
+            resultImage.at<cv::Vec3b>(i,j)[2] = float(resultR[i*img.rows + j] - minR) / (maxR - minR) * 255;
+            resultImage.at<cv::Vec3b>(i,j)[1] = float(resultG[i*img.rows + j] - minG) / (maxG - minG) * 255;
+            resultImage.at<cv::Vec3b>(i,j)[0] = float(resultB[i*img.rows + j] - minB) / (maxB - minB) * 255;
 
         } 
     }
